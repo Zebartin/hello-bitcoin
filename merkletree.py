@@ -7,8 +7,7 @@ merkle_tree = MerkleTree.make_merkle_tree(['big', 'brother', 'is', 'watching', '
 from __future__ import annotations
 from collections.abc import Iterable
 import logging
-
-from utils import double_hash
+import hashlib
 
 
 class MerkleNode:
@@ -25,7 +24,7 @@ class MerkleNode:
             data = data.encode()
         if not isinstance(data, bytes):
             raise TypeError('Merkle树节点数据应为bytes或str类型')
-        self.hash: bytes = double_hash(data)
+        self.hash: bytes = MerkleNode.double_hash(data)
         self.left: MerkleNode = None
         self.right: MerkleNode = None
 
@@ -36,6 +35,11 @@ class MerkleNode:
         parent_node.left = left
         parent_node.right = right
         return parent_node
+
+    @staticmethod
+    def double_hash(x: bytes) -> bytes:
+        """两次SHA256哈希"""
+        return hashlib.sha256(hashlib.sha256(x).digest()).digest()
 
     def __str__(self):
         return self.hash.hex()[:8]
