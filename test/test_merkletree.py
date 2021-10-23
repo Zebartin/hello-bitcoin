@@ -5,8 +5,8 @@ from utils import double_hash, random_str
 
 
 def test_double_hash():
-    assert double_hash('1') \
-        == 'e0bc614e4fd035a488619799853b075143deea596c477b8dc077e309c0fe42e9'
+    assert double_hash(b'hello bitcoin').hex() \
+        == '858f460a0abb5bff621b7e625416ba9e2239e36c06ecb469088b6eff9bed5103'
 
 
 def test_merkletree():

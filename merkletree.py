@@ -20,10 +20,12 @@ class MerkleNode:
         right: 右子节点
     """
 
-    def __init__(self, data: str) -> None:
-        if not isinstance(data, str):
-            raise TypeError('Merkle树节点数据应为str类型')
-        self.hash = double_hash(data)
+    def __init__(self, data: str | bytes) -> None:
+        if isinstance(data, str):
+            data = data.encode()
+        if not isinstance(data, bytes):
+            raise TypeError('Merkle树节点数据应为bytes或str类型')
+        self.hash: bytes = double_hash(data)
         self.left: MerkleNode = None
         self.right: MerkleNode = None
 
@@ -36,7 +38,7 @@ class MerkleNode:
         return parent_node
 
     def __str__(self):
-        return self.hash[:4]
+        return self.hash.hex()[:8]
 
 
 class MerkleTree:
