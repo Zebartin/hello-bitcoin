@@ -13,6 +13,7 @@ from __future__ import annotations
 import base58
 from ecdsa import SECP256k1, SigningKey
 from ecdsa.keys import BadSignatureError
+from ecdsa.util import sigencode_der, sigdecode_der
 
 from utils import ripemd160_sha256
 
@@ -62,10 +63,12 @@ class Account:
         return self.signing_key.to_string().hex()
 
     def sign(self, msg: bytes) -> bytes:
-        return self.signing_key.sign(msg)
+        """签名，输出格式为DER编码"""
+        return self.signing_key.sign(msg, sigencode=sigencode_der)
 
-    def verify(self, sig, msg: bytes) -> bool:
+    def verify(self, sig: bytes, msg: bytes) -> bool:
+        """验证，输入的签名为DER编码"""
         try:
-            return self.verifying_key.verify(sig, msg)
+            return self.verifying_key.verify(sig, msg, sigdecode=sigdecode_der)
         except BadSignatureError:
             return False
