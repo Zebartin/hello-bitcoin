@@ -1,11 +1,10 @@
 import random
-import pytest
 from merkletree import MerkleNode, MerkleTree
-from utils import random_str
+from utils import double_sha256, random_str
 
 
 def test_double_hash():
-    assert MerkleNode.double_hash(b'hello bitcoin').hex() \
+    assert double_sha256(b'hello bitcoin').hex() \
         == '858f460a0abb5bff621b7e625416ba9e2239e36c06ecb469088b6eff9bed5103'
 
 
@@ -21,5 +20,5 @@ def verify_merklenode(root: MerkleNode) -> bool:
         if root.left is None and root.right is None:
             return True
         return False
-    return MerkleNode.double_hash(root.left.hash + root.right.hash) == root.hash \
+    return double_sha256(root.left.hash + root.right.hash) == root.hash \
         and verify_merklenode(root.left) and verify_merklenode(root.right)

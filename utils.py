@@ -1,5 +1,11 @@
+import hashlib
 import random
 import string
+
+
+def double_sha256(x: bytes) -> bytes:
+    """两次SHA256哈希"""
+    return hashlib.sha256(hashlib.sha256(x).digest()).digest()
 
 
 def random_str(num: int = 16):
