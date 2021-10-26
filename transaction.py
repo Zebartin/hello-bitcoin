@@ -1,17 +1,33 @@
+"""比特币交易
+
+使用样例：
+
+ain = [Account.from_random_key() for _ in range(3)]
+aout = [Account.from_random_key() for _ in range(2)]
+tx = Transaction.generate(ain, aout)
+print(tx.serialize().hex())
+print(tx)
+"""
 from __future__ import annotations
-from typing import Dict, List
+
 import json
+import random
 import struct
+from typing import Dict, List
+
+from base58 import b58decode_check
+
+from account import Account
+from utils import double_sha256, random_str
 
 
-def make_P2PKH_scriptPubKey(pubkey: str) -> bytes:
+def make_P2PKH_scriptPubKey(pubkey_hash: bytes) -> bytes:
     """生成公钥对应的P2PKH脚本"""
     OP_DUP = b'\x76'
     OP_HASH160 = b'\xa9'
     OP_EQUALVERIFY = b'\x88'
     OP_CHECKSIG = b'\xac'
-    pubkey_bytes = bytes.fromhex(pubkey)
-    return OP_DUP + OP_HASH160 + struct.pack('B', len(pubkey_bytes)) + pubkey_bytes + OP_EQUALVERIFY + OP_CHECKSIG
+    return OP_DUP + OP_HASH160 + struct.pack('B', len(pubkey_hash)) + pubkey_hash + OP_EQUALVERIFY + OP_CHECKSIG
 
 
 def make_scriptSig(sig: bytes, pubkey: str, sighash=b'\x01') -> bytes:
@@ -21,6 +37,15 @@ def make_scriptSig(sig: bytes, pubkey: str, sighash=b'\x01') -> bytes:
 
 
 class TxIn:
+    """交易输入
+
+    属性：
+        txid: UTXO交易id
+        vout: UTOX输出index
+        scriptSig: bytes类型的脚本
+        sequence
+    """
+
     def __init__(self, txid: int, vout: int, scriptSig: bytes, sequence: int) -> None:
         self.txid = txid
         self.vout = vout
@@ -35,8 +60,8 @@ class TxIn:
             ret += struct.pack("<I", tmp & 0xFFFFFFFF)
             tmp >>= 32
         ret += struct.pack('<I', self.vout)
-        # 这里本来应该按比特币的CompactSize Unsigned Integer编码
-        # scriptSig长度不会大于140bytes，可以简单处理，下同
+        # 这里本来应是比特币的CompactSize Unsigned Integer编码
+        # scriptSig长度不会大于140bytes，可以简化处理，下同
         ret += struct.pack('B', len(self.scriptSig))
         ret += self.scriptSig
         ret += struct.pack('<I', self.sequence)
@@ -64,20 +89,27 @@ class TxIn:
 
 
 class TxOut:
+    """交易输出
+
+    属性：
+        value: 交易额，以聪（satoshi）为单位
+        scriptPubKey: bytes类型的脚本
+    """
+
     def __init__(self, value: int, scriptPubKey: bytes) -> None:
         self.value = value
         self.scriptPubKey = scriptPubKey
 
     def serialize(self) -> bytes:
         ret = b''
-        ret += struct.pack('<q', self.value)
+        ret += struct.pack('<Q', self.value)
         ret += struct.pack('B', len(self.scriptPubKey))
         ret += self.scriptPubKey
         return ret
 
     @classmethod
     def deserialize(cls, f) -> TxOut:
-        value = struct.unpack("<q", f.read(8))[0]
+        value = struct.unpack("<Q", f.read(8))[0]
         scriptPubKey_len = struct.unpack("<B", f.read(1))[0]
         scriptPubKey = f.read(scriptPubKey_len)
         return cls(value, scriptPubKey)
@@ -90,6 +122,15 @@ class TxOut:
 
 
 class Transaction:
+    """交易
+
+    属性：
+        version: 版本号
+        vin: 输入
+        vout: 输出
+        locktime
+    """
+
     def __init__(self, version: int, vin: List[TxIn], vout: List[TxOut], locktime: int) -> None:
         self.version = version
         self.vin = vin
@@ -132,3 +173,38 @@ class Transaction:
 
     def __str__(self) -> str:
         return json.dumps(self.to_dict(), indent=4)
+
+    @classmethod
+    def generate(cls, account_in: List[Account], accout_out: List[Account]) -> Transaction:
+        """随机生成一笔交易，输入输出的地址或者签名由参数中的Account指定"""
+        N_8F = (1 << 32) - 1
+        rs = random_str()
+        n_vin = len(account_in)
+        n_vout = len(accout_out)
+        vin = []
+        vout = []
+        for i in range(n_vout):
+            # 随机输出：
+            #   随机交易额，限制在相对合理的范围内
+            #   对应账户生成的pubkey脚本
+            value = random.randint(1, N_8F)
+            pubkey_hash = b58decode_check(accout_out[i].address)
+            scriptPubKey = make_P2PKH_scriptPubKey(pubkey_hash)
+            vout.append(TxOut(value, scriptPubKey))
+        for i in range(n_vin):
+            # 随机输入：
+            #   用随机字符串伪造交易id
+            #   随机4bytes的vout
+            #   空的脚本
+            #   全F的sequence
+            txid = int.from_bytes(double_sha256(next(rs).encode()), 'little')
+            _vout = random.randint(0, N_8F)
+            vin.append(TxIn(txid, _vout, b'', N_8F))
+
+        tx = cls(1, vin, vout, 0)
+        tx_msg = tx.serialize()
+        # 补上各个输入对不含sig脚本的交易的签名
+        for i in range(n_vin):
+            sig = account_in[i].sign(tx_msg)
+            tx.vin[i].scriptSig = make_scriptSig(sig, account_in[i].public_key)
+        return tx
