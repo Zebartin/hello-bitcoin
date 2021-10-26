@@ -4,6 +4,22 @@ import json
 import struct
 
 
+def make_P2PKH_scriptPubKey(pubkey: str) -> bytes:
+    """生成公钥对应的P2PKH脚本"""
+    OP_DUP = b'\x76'
+    OP_HASH160 = b'\xa9'
+    OP_EQUALVERIFY = b'\x88'
+    OP_CHECKSIG = b'\xac'
+    pubkey_bytes = bytes.fromhex(pubkey)
+    return OP_DUP + OP_HASH160 + struct.pack('B', len(pubkey_bytes)) + pubkey_bytes + OP_EQUALVERIFY + OP_CHECKSIG
+
+
+def make_scriptSig(sig: bytes, pubkey: str, sighash=b'\x01') -> bytes:
+    """生成签名和公钥对应的脚本"""
+    pubkey_bytes = bytes.fromhex(pubkey)
+    return struct.pack('B', len(sig) + 1) + sig + sighash + struct.pack('B', len(pubkey_bytes)) + pubkey_bytes
+
+
 class TxIn:
     def __init__(self, txid: int, vout: int, scriptSig: bytes, sequence: int) -> None:
         self.txid = txid
