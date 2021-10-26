@@ -35,11 +35,11 @@ def mock_tx():
     )
     txout1 = TxOut(
         int(0.01500000*100000000),
-        make_P2PKH_scriptPubKey('ab68025513c3dbd2f7b92a94e0581f5d50f654e7')
+        make_P2PKH_scriptPubKey(bytes.fromhex('ab68025513c3dbd2f7b92a94e0581f5d50f654e7'))
     )
     txout2 = TxOut(
         int(0.08450000*100000000),
-        make_P2PKH_scriptPubKey('7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8')
+        make_P2PKH_scriptPubKey(bytes.fromhex('7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8'))
     )
     return Transaction(1, [txin], [txout1, txout2], 0)
 
