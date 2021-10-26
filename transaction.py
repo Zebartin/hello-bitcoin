@@ -183,14 +183,6 @@ class Transaction:
         n_vout = len(accout_out)
         vin = []
         vout = []
-        for i in range(n_vout):
-            # 随机输出：
-            #   随机交易额，限制在相对合理的范围内
-            #   对应账户生成的pubkey脚本
-            value = random.randint(1, N_8F)
-            pubkey_hash = b58decode_check(accout_out[i].address)
-            scriptPubKey = make_P2PKH_scriptPubKey(pubkey_hash)
-            vout.append(TxOut(value, scriptPubKey))
         for i in range(n_vin):
             # 随机输入：
             #   用随机字符串伪造交易id
@@ -200,6 +192,14 @@ class Transaction:
             txid = int.from_bytes(double_sha256(next(rs).encode()), 'little')
             _vout = random.randint(0, N_8F)
             vin.append(TxIn(txid, _vout, b'', N_8F))
+        for i in range(n_vout):
+            # 随机输出：
+            #   随机交易额，限制在相对合理的范围内
+            #   对应账户生成的pubkey脚本
+            value = random.randint(1, N_8F)
+            pubkey_hash = b58decode_check(accout_out[i].address)
+            scriptPubKey = make_P2PKH_scriptPubKey(pubkey_hash)
+            vout.append(TxOut(value, scriptPubKey))
 
         tx = cls(1, vin, vout, 0)
         tx_msg = tx.serialize()
