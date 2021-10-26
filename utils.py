@@ -8,6 +8,11 @@ def double_sha256(x: bytes) -> bytes:
     return hashlib.sha256(hashlib.sha256(x).digest()).digest()
 
 
+def ripemd160_sha256(x: bytes) -> bytes:
+    """先SHA256后RIPEMD160"""
+    return hashlib.new('ripemd160', hashlib.sha256(x).digest()).digest()
+
+
 def random_str(num: int = 16):
     """随机生成num长度的字符串"""
     while True:

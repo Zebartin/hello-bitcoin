@@ -10,11 +10,11 @@ assert a1.verify(signature, m)
 """
 from __future__ import annotations
 
-import hashlib
-
 import base58
 from ecdsa import SECP256k1, SigningKey
 from ecdsa.keys import BadSignatureError
+
+from utils import ripemd160_sha256
 
 
 class Account:
@@ -34,8 +34,8 @@ class Account:
         self.signing_key = signing_key
         self.verifying_key = self.signing_key.verifying_key
         # base58库提供的base58check编码没有添加version前缀，需自行添加0x00
-        self.address = base58.b58encode_check(b'\x00'+hashlib.new('ripemd160', hashlib.sha256(
-            self.verifying_key.to_string(encoding=public_key_encoding)).digest()).digest()).decode()
+        self.address = base58.b58encode_check(b'\x00' + ripemd160_sha256(
+            self.verifying_key.to_string(encoding=public_key_encoding))).decode()
 
     @classmethod
     def from_private_key(cls, private_key: str | bytes, public_key_encoding='uncompressed') -> Account:
