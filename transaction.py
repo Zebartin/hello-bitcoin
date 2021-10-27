@@ -175,12 +175,12 @@ class Transaction:
         }
 
     @classmethod
-    def generate(cls, account_in: List[Account], accout_out: List[Account]) -> Transaction:
+    def generate(cls, account_in: List[Account], account_out: List[Account]) -> Transaction:
         """随机生成一笔交易，输入输出的地址或者签名由参数中的Account指定"""
         N_8F = (1 << 32) - 1
         rs = random_str()
         n_vin = len(account_in)
-        n_vout = len(accout_out)
+        n_vout = len(account_out)
         vin = []
         vout = []
         for i in range(n_vin):
@@ -197,7 +197,7 @@ class Transaction:
             #   随机交易额，限制在相对合理的范围内
             #   对应账户生成的pubkey脚本
             value = random.randint(1, N_8F)
-            pubkey_hash = b58decode_check(accout_out[i].address)
+            pubkey_hash = b58decode_check(account_out[i].address)
             scriptPubKey = make_P2PKH_scriptPubKey(pubkey_hash)
             vout.append(TxOut(value, scriptPubKey))
 
