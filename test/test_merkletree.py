@@ -3,11 +3,6 @@ from merkletree import MerkleNode, MerkleTree
 from utils import double_sha256, random_str
 
 
-def test_double_hash():
-    assert double_sha256(b'hello bitcoin').hex() \
-        == '858f460a0abb5bff621b7e625416ba9e2239e36c06ecb469088b6eff9bed5103'
-
-
 def test_merkletree():
     rs = random_str()
     mock_txs = [next(rs) for _ in range(random.randint(1, 129))]

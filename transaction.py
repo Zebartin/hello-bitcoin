@@ -6,7 +6,7 @@ ain = [Account.from_random_key() for _ in range(3)]
 aout = [Account.from_random_key() for _ in range(2)]
 tx = Transaction.generate(ain, aout)
 print(tx.serialize().hex())
-print(tx)
+print(tx.to_dict())
 """
 from __future__ import annotations
 
