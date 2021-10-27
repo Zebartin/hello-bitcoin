@@ -10,7 +10,6 @@ print(tx)
 """
 from __future__ import annotations
 
-import json
 import random
 import struct
 from typing import Dict, List
@@ -18,7 +17,7 @@ from typing import Dict, List
 from base58 import b58decode_check
 
 from account import Account
-from utils import double_sha256, random_str
+from utils import double_sha256, int2hex, random_str
 
 
 def make_P2PKH_scriptPubKey(pubkey_hash: bytes) -> bytes:
@@ -81,10 +80,10 @@ class TxIn:
 
     def to_dict(self) -> Dict:
         return {
-            'txid': hex(self.txid)[2:],
+            'txid': int2hex(self.txid, 64),
             'vout': self.vout,
             'scriptSig': self.scriptSig.hex(),
-            'sequence': hex(self.sequence)[2:]
+            'sequence': int2hex(self.sequence, 8)
         }
 
 
@@ -129,6 +128,7 @@ class Transaction:
         vin: 输入
         vout: 输出
         locktime
+        txid: 交易ID
     """
 
     def __init__(self, version: int, vin: List[TxIn], vout: List[TxOut], locktime: int) -> None:
@@ -163,16 +163,18 @@ class Transaction:
         locktime = struct.unpack("<I", f.read(4))[0]
         return cls(version, vin, vout, locktime)
 
+    @property
+    def txid(self) -> str:
+        return double_sha256(self.serialize())[::-1].hex()
+
     def to_dict(self) -> Dict:
         return {
+            'hash': self.txid,
             'version': self.version,
             'vin': [i.to_dict() for i in self.vin],
             'vout': [i.to_dict() for i in self.vout],
             'locktime': self.locktime
         }
-
-    def __str__(self) -> str:
-        return json.dumps(self.to_dict(), indent=4)
 
     @classmethod
     def generate(cls, account_in: List[Account], accout_out: List[Account]) -> Transaction:
@@ -189,7 +191,7 @@ class Transaction:
             #   随机4bytes的vout
             #   空的脚本
             #   全F的sequence
-            txid = int.from_bytes(double_sha256(next(rs).encode()), 'little')
+            txid = int.from_bytes(double_sha256(next(rs).encode()), 'big')
             _vout = random.randint(0, N_8F)
             vin.append(TxIn(txid, _vout, b'', N_8F))
         for i in range(n_vout):
