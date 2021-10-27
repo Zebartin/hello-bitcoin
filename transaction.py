@@ -17,7 +17,7 @@ from typing import Dict, List
 from base58 import b58decode_check
 
 from account import Account
-from utils import double_sha256, int2hex, random_str
+from utils import deser_compact_size, double_sha256, int2hex, random_str, ser_compact_size
 
 
 def make_P2PKH_scriptPubKey(pubkey_hash: bytes) -> bytes:
@@ -59,9 +59,7 @@ class TxIn:
             ret += struct.pack("<I", tmp & 0xFFFFFFFF)
             tmp >>= 32
         ret += struct.pack('<I', self.vout)
-        # 这里本来应是比特币的CompactSize Unsigned Integer编码
-        # scriptSig长度不会大于140bytes，可以简化处理，下同
-        ret += struct.pack('B', len(self.scriptSig))
+        ret += ser_compact_size(len(self.scriptSig))
         ret += self.scriptSig
         ret += struct.pack('<I', self.sequence)
         return ret
@@ -73,7 +71,7 @@ class TxIn:
             t = struct.unpack("<I", f.read(4))[0]
             txid += t << (i * 32)
         vout = struct.unpack("<I", f.read(4))[0]
-        scirptSig_len = struct.unpack("<B", f.read(1))[0]
+        scirptSig_len = deser_compact_size(f)
         scriptSig = f.read(scirptSig_len)
         sequence = struct.unpack("<I", f.read(4))[0]
         return cls(txid, vout, scriptSig, sequence)
@@ -102,14 +100,14 @@ class TxOut:
     def serialize(self) -> bytes:
         ret = b''
         ret += struct.pack('<Q', self.value)
-        ret += struct.pack('B', len(self.scriptPubKey))
+        ret += ser_compact_size(len(self.scriptPubKey))
         ret += self.scriptPubKey
         return ret
 
     @classmethod
     def deserialize(cls, f) -> TxOut:
         value = struct.unpack("<Q", f.read(8))[0]
-        scriptPubKey_len = struct.unpack("<B", f.read(1))[0]
+        scriptPubKey_len = deser_compact_size(f)
         scriptPubKey = f.read(scriptPubKey_len)
         return cls(value, scriptPubKey)
 
@@ -140,10 +138,10 @@ class Transaction:
     def serialize(self) -> bytes:
         ret = b''
         ret += struct.pack("<i", self.version)
-        ret += struct.pack("B", len(self.vin))
+        ret += ser_compact_size(len(self.vin))
         for i in self.vin:
             ret += i.serialize()
-        ret += struct.pack("B", len(self.vout))
+        ret += ser_compact_size(len(self.vout))
         for i in self.vout:
             ret += i.serialize()
         ret += struct.pack("<I", self.locktime)
@@ -152,11 +150,11 @@ class Transaction:
     @classmethod
     def deserialize(cls, f) -> Transaction:
         version = struct.unpack("<i", f.read(4))[0]
-        vin_size = struct.unpack("<B", f.read(1))[0]
+        vin_size = deser_compact_size(f)
         vin = []
         for _ in range(vin_size):
             vin.append(TxIn.deserialize(f))
-        vout_size = struct.unpack("<B", f.read(1))[0]
+        vout_size = deser_compact_size(f)
         vout = []
         for _ in range(vout_size):
             vout.append(TxOut.deserialize(f))
