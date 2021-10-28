@@ -31,8 +31,9 @@ def make_P2PKH_scriptPubKey(pubkey_hash: bytes) -> bytes:
 
 def make_scriptSig(sig: bytes, pubkey: str, sighash=b'\x01') -> bytes:
     """生成签名和公钥对应的脚本"""
+    sig += sighash
     pubkey_bytes = bytes.fromhex(pubkey)
-    return struct.pack('B', len(sig) + 1) + sig + sighash + struct.pack('B', len(pubkey_bytes)) + pubkey_bytes
+    return struct.pack('B', len(sig)) + sig + struct.pack('B', len(pubkey_bytes)) + pubkey_bytes
 
 
 class TxIn:
@@ -197,7 +198,8 @@ class Transaction:
             #   随机交易额，限制在相对合理的范围内
             #   对应账户生成的pubkey脚本
             value = random.randint(1, N_8F)
-            pubkey_hash = b58decode_check(account_out[i].address)
+            # 需要去除开头的版本号0x00
+            pubkey_hash = b58decode_check(account_out[i].address)[1:]
             scriptPubKey = make_P2PKH_scriptPubKey(pubkey_hash)
             vout.append(TxOut(value, scriptPubKey))
 
