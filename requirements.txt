@@ -1,3 +1,0 @@
-pytest
-ecdsa
-base58

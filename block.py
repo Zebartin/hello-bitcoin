@@ -31,8 +31,10 @@ class BlockHeader:
         hash: 区块头部哈希值
     """
 
-    def __init__(self, version: int, prev_block_hash: int, merkle_root: int, timestamp: int, target: int, nonce: int) -> None:
+    def __init__(self, version: int, prev_block_hash: int | str, merkle_root: int, timestamp: int, target: int, nonce: int) -> None:
         self.version = version
+        if isinstance(prev_block_hash, str):
+            prev_block_hash = int(prev_block_hash, 16)
         self.prev_block_hash = prev_block_hash
         self.merkle_root = merkle_root
         self.timestamp = timestamp
