@@ -6,7 +6,6 @@ merkle_tree = MerkleTree.make_merkle_tree(['big', 'brother', 'is', 'watching', '
 """
 from __future__ import annotations
 from collections.abc import Iterable
-import logging
 
 from utils import double_sha256
 
@@ -66,9 +65,6 @@ class MerkleTree:
                 layer_nodes[i] = MerkleNode.parent(
                     layer_nodes[i * 2], layer_nodes[i * 2 + 1])
             layer_nodes = layer_nodes[:len(layer_nodes) // 2]
-
-            logging.debug('当前Merkle节点：')
-            logging.debug('\t'.join([str(n) for n in layer_nodes]))
         self.root = layer_nodes[0]
 
     @staticmethod
