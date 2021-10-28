@@ -10,11 +10,14 @@ from transaction import Transaction
 
 
 @click.command()
-@click.option('-a', '--account', default=100, help='生成账户的数量')
-@click.option('-t', '--transaction', default=1000, help='生成交易的数量')
-@click.option('-b', '--block', default=10, help='生成区块的数量')
-@click.option('-o', '--output', type=click.Path(), default=os.getcwd(), help='结果输出路径')
+@click.option('-a', '--account', default=100, show_default=True, help='生成账户的数量')
+@click.option('-t', '--transaction', default=1000, show_default=True, help='生成交易的数量')
+@click.option('-b', '--block', default=10, show_default=True, help='生成区块的数量')
+@click.option('-o', '--output', type=click.Path(), default=os.getcwd(), show_default=True, help='结果输出路径')
 def cli(account, transaction, block, output):
+    assert account > 1
+    assert block > 0
+    assert transaction >= block
     # 随机生成account个随机公钥编码格式的Account
     public_key_encoding = ('compressed', 'uncompressed')
     accounts = [Account.from_random_key(
@@ -22,9 +25,9 @@ def cli(account, transaction, block, output):
     # 根据上面生成的账户随机生成transaction个Transaction
     txs = []
     for _ in range(transaction):
-        # 输入输出数量随机
-        n_vin = random.randint(1, 10)
-        n_vout = random.randint(1, 10)
+        # 输入输出数量随机，最多为account数量的十分之一
+        n_vin = random.randint(1, -(account // -10))
+        n_vout = random.randint(1, -(account // -10))
         account_picked = random.sample(accounts, n_vin+n_vout)
         txs.append(Transaction.generate(
             account_in=account_picked[:n_vin],

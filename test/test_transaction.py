@@ -1,9 +1,11 @@
-import pytest
 from io import BytesIO
-from transaction import Transaction, TxIn, TxOut, make_P2PKH_scriptPubKey, make_scriptSig
+
+import pytest
+from transaction import (Transaction, TxIn, TxOut, make_P2PKH_scriptPubKey,
+                         make_scriptSig)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_tx_hex():
     """测试数据来自Mastering Bitcoin第二版第123页"""
     return '0100000001186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd73'\
@@ -17,7 +19,7 @@ def mock_tx_hex():
            '1976a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac00000000'
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_tx():
     """测试数据来自Mastering Bitcoin第二版第118页"""
     txin = TxIn(
