@@ -175,6 +175,15 @@ class Transaction:
             'locktime': self.locktime
         }
 
+    def cal_sighash(self, input_index: int, account: Account) -> bytes:
+        """计算对应的sighash"""
+        tmp = self.vin[input_index].scriptSig
+        self.vin[input_index].scriptSig = make_P2PKH_scriptPubKey(
+            b58decode_check(account.address)[1:])
+        ret = double_sha256(self.serialize() + struct.pack(b"<I", 1))
+        self.vin[input_index].scriptSig = tmp
+        return ret
+
     @classmethod
     def generate(cls, account_in: List[Account], account_out: List[Account]) -> Transaction:
         """随机生成一笔交易，输入输出的地址或者签名由参数中的Account指定"""
@@ -204,9 +213,9 @@ class Transaction:
             vout.append(TxOut(value, scriptPubKey))
 
         tx = cls(1, vin, vout, 0)
-        tx_msg = tx.serialize()
-        # 补上各个输入对不含sig脚本的交易的签名
+        tx_tmp = cls(1, vin, vout, 0)
+        # 补上各个输入的签名
         for i in range(n_vin):
-            sig = account_in[i].sign(tx_msg)
+            sig = account_in[i].sign(tx_tmp.cal_sighash(i, account_in[i]))
             tx.vin[i].scriptSig = make_scriptSig(sig, account_in[i].public_key)
         return tx
